@@ -6,8 +6,10 @@ import subprocess
 import sys
 import time
 
-from pywinauto import Application
+from pywinauto import Application, WindowSpecification
 from pywinauto.findwindows import ElementNotFoundError
+from pywinauto.win32structures import RECT
+from PIL import ImageGrab
 
 
 CMAKE_EXE = os.path.join(cmake.CMAKE_BIN_DIR, 'cmake.exe')
@@ -24,6 +26,8 @@ PATCHED_FILES = [
     'Makefile',
     'Makefile2',
 ]
+
+SCALE = 1.0
 
 
 def load_vcvars() -> None:
@@ -71,6 +75,7 @@ def cmake_configure() -> None:
         '-D', 'CMAKE_SYSTEM_NAME=Windows',
         '-D', 'CMAKE_BUILD_TYPE=Release',
     ], env=os.environ)
+    print('done')
 
 
 def patch_makefiles(replacements: dict[str, str]):
@@ -94,6 +99,7 @@ def patch_makefiles(replacements: dict[str, str]):
                 lambda m: escaped[re.escape(m.group(0))], content)
             with open(full_path, 'w') as file:
                 file.write(new_content)
+    print('done')
 
 
 def make_iso(name: str) -> None:
@@ -105,6 +111,7 @@ def make_iso(name: str) -> None:
         '-J',  # Joliet
         DIR_SMYGUS,
     ])
+    print('done')
 
 
 def launch_dingusppc(iso: str) -> Application:
@@ -128,12 +135,30 @@ def launch_dingusppc(iso: str) -> Application:
         time.sleep(1)
         try:
             app.connect(title='DingusPPC Display')
+            print('done')
             return app
         except ElementNotFoundError as err:
             last_err = err
             continue
 
     raise last_err
+
+
+def wait_for_color(wnd: WindowSpecification, pos: tuple[int, int], color: tuple[int, int, int], timeout: int) -> None:
+    for _ in range(timeout + 1):
+        img = ImageGrab.grab(bbox=rect_to_bbox(
+            wnd.client_area_rect()), all_screens=True)
+        pixel = img.getpixel((pos[0] * SCALE, pos[1] * SCALE))
+        if pixel == color:
+            return
+
+        time.sleep(1)
+
+    raise TimeoutError()
+
+
+def rect_to_bbox(rect: RECT) -> tuple[int, int, int, int]:
+    return (rect.left * SCALE, rect.top * SCALE, rect.right * SCALE, rect.bottom * SCALE)
 
 
 load_vcvars()
@@ -144,4 +169,23 @@ patch_makefiles({
     ':X86': ':PPC',
 })
 make_iso(sys.argv[2])
-launch_dingusppc(sys.argv[2])
+
+app = launch_dingusppc(sys.argv[2])
+wnd = app.top_window()
+
+print('Waiting for the ARC firmware boot menu...', end=' ', flush=True)
+wait_for_color(wnd, (8, 8), (0, 0, 170), 15)
+print('done')
+
+print('Booting Windows NT...', end=' ', flush=True)
+wnd.type_keys('{ENTER}')
+wait_for_color(wnd, (8, 100), (0, 0, 255), 15)
+print('done')
+
+print('Waiting for the desktop...', end=' ', flush=True)
+wait_for_color(wnd, (1000, 8), (0, 128, 128), 20)
+print('done')
+
+print('Waiting for the task bar...', end=' ', flush=True)
+wait_for_color(wnd, (500, 750), (192, 192, 192), 20)
+print('done')
