@@ -5,6 +5,7 @@ Requirements:
 - Microsoft Windows host system
 - Microsoft Visual C++ 4.0 (x86)
 - mkisofs in %PATH%
+- [Wack0's DingusPPC binaries](https://github.com/Wack0/dingusppc-nt/releases) in dingusppc/
 
 ```
 python smyguscpp.py path\to\project cdimage.iso

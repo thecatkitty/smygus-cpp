@@ -163,3 +163,5 @@ cython_debug/
 
 # SmygusCPP
 *.iso
+dingusppc/*
+!dingusppc/*.md

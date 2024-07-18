@@ -4,11 +4,16 @@ import re
 import shutil
 import subprocess
 import sys
+import time
+
+from pywinauto import Application
+from pywinauto.findwindows import ElementNotFoundError
 
 
 CMAKE_EXE = os.path.join(cmake.CMAKE_BIN_DIR, 'cmake.exe')
 VCVARS32_BAT = 'C:\\MSDEV\\BIN\\VCVARS32.BAT'
 
+DIR_SCRIPT = os.path.dirname(os.path.abspath(__file__))
 DIR_SMYGUS = 'C:\\MSDEV\\PROJECTS\\SMYGUS'
 DIR_SOURCE = DIR_SMYGUS + '\\SOURCE'
 DIR_BUILD = DIR_SMYGUS + '\\BUILD'
@@ -102,6 +107,35 @@ def make_iso(name: str) -> None:
     ])
 
 
+def launch_dingusppc(iso: str) -> Application:
+    print('Launching the DingusPPC emulator...')
+    iso_path = os.path.abspath(iso)
+    cwd = os.getcwd()
+    os.chdir(os.path.join(DIR_SCRIPT, 'dingusppc'))
+    subprocess.Popen([
+        'dingusppc.exe',
+        '-m', 'imacg3',
+        '-b', 'imacboot.u3',
+        '--rambank1_size=128',
+        '--hdd_img=hd.img',
+        '--cdr_img=' + iso_path,
+    ])
+    os.chdir(cwd)
+
+    app = Application()
+    last_err = None
+    for _ in range(5):
+        time.sleep(1)
+        try:
+            app.connect(title='DingusPPC Display')
+            return app
+        except ElementNotFoundError as err:
+            last_err = err
+            continue
+
+    raise last_err
+
+
 load_vcvars()
 copy_sources(sys.argv[1])
 cmake_configure()
@@ -110,3 +144,4 @@ patch_makefiles({
     ':X86': ':PPC',
 })
 make_iso(sys.argv[2])
+launch_dingusppc(sys.argv[2])
