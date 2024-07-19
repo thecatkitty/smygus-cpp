@@ -178,7 +178,7 @@ wait_for_color(wnd, (8, 8), (0, 0, 170), 15)
 print('done')
 
 print('Booting Windows NT...', end=' ', flush=True)
-wnd.type_keys('{ENTER}')
+wnd.type_keys('{ENTER down}{ENTER up}')
 wait_for_color(wnd, (8, 100), (0, 0, 255), 15)
 print('done')
 
@@ -188,4 +188,13 @@ print('done')
 
 print('Waiting for the task bar...', end=' ', flush=True)
 wait_for_color(wnd, (500, 750), (192, 192, 192), 20)
+print('done')
+
+print('Launching the Command Prompt...', end=' ', flush=True)
+time.sleep(0.5)
+wnd.type_keys('{TAB down}{TAB up}{ENTER down}{ENTER up}')
+time.sleep(2)
+wnd.type_keys('{UP down}{UP up}{UP down}{UP up}{ENTER down}{ENTER up}')
+time.sleep(2)
+wnd.type_keys('{c down}{c up}{m down}{m up}{d down}{d up}{ENTER down}{ENTER up}')
 print('done')
