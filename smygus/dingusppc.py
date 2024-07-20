@@ -26,15 +26,29 @@ class DingusPPC(object):
         cwd = os.getcwd()
         os.chdir(os.path.join(os.path.dirname(
             os.path.abspath(__file__)), '../dingusppc'))
-        subprocess.Popen([
+        self._proc = subprocess.Popen([
             'dingusppc.exe',
             '-m', 'imacg3',
             '-b', 'imacboot.u3',
             '--rambank1_size=128',
             '--hdd_img=hd.img',
             '--cdr_img=' + iso_path,
-        ])
+        ], stdout=subprocess.PIPE)
         os.chdir(cwd)
+
+        self.configuration = dict()
+        while self._proc.poll() is None:
+            line = self._proc.stdout.readline().decode().rstrip()
+            if not ':' in line:
+                continue
+
+            key, value = [part.strip() for part in line.split(':', 1)]
+            if key == 'Machine settings summary':
+                continue
+
+            self.configuration[key] = value
+            if key == 'Execution mode':
+                break
 
         self.app = Application()
         self.window = None

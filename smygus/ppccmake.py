@@ -52,8 +52,10 @@ class PowerPCCMake(object):
         print('done')
 
     def boot(self) -> DingusPPC:
+        print('Launching the DingusPPC...', end=' ', flush=True)
         dingus = DingusPPC(self.iso_path)
         dingus.connect()
+        print('done')
 
         print('Waiting for the ARC firmware boot menu...', end=' ', flush=True)
         dingus.wait(color='#00A', position=(8, 8))
