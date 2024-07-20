@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import sys
 
 from . import *
 
@@ -41,15 +42,19 @@ class PowerPCCMake(object):
         })
         print('done')
 
-        print('Creating the disk image...')
-        subprocess.run([
+        print('Creating the disk image...', end=' ', flush=True)
+        mkisofs = subprocess.run([
             'mkisofs',
             '-o', self.iso_path,
             '-r',  # Rock Ridge
             '-J',  # Joliet
             self.project_path,
         ],
-            check=True)
+            stderr=subprocess.PIPE,
+            text=True)
+        if 0 != mkisofs.returncode:
+            print(mkisofs.stderr, file=sys.stderr)
+            exit(mkisofs.returncode)
         print('done')
 
     def boot(self) -> DingusPPC:
