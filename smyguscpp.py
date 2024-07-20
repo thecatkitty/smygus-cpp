@@ -11,11 +11,13 @@ dingus = pmake.boot()
 with logger.step('Launching the Command Prompt'):
     time.sleep(2)
     dingus.press('TAB').press('ENTER')
-    time.sleep(2)
-    dingus.press('UP').press('UP')
-    time.sleep(2)
+    dingus.wait(color='#C0C0C0', position=(180, 720))
+    dingus.press('UP')
+    dingus.wait(color='#000080', position=(180, 720))
+    dingus.press('UP')
+    dingus.wait(color='#000080', position=(180, 680))
     dingus.press('ENTER')
-    time.sleep(2)
+    dingus.wait(color='#000080', position=(300, 570))
     dingus.type('cmd').press('ENTER')
 
 with logger.step('Preparing the working directory'):
