@@ -4,6 +4,8 @@ import re
 import shutil
 import subprocess
 
+from . import logger
+
 
 class CMake(object):
     def __init__(self) -> None:
@@ -12,6 +14,7 @@ class CMake(object):
         self.binaries = None
 
     def configure(self, generator: str, sources: str, binaries: str, defines: dict[str, str] = dict()) -> None:
+        logger.log('', newline=False)
         self.sources = sources
         self.binaries = binaries
 
@@ -42,7 +45,7 @@ class CMake(object):
                 if not any(key in content for key in replacements.keys()):
                     continue
 
-                print('Patching:', full_path)
+                logger.log(f'Patching {full_path}')
                 new_content = pattern.sub(
                     lambda m: escaped[re.escape(m.group(0))], content)
                 with open(full_path, 'w') as file:
