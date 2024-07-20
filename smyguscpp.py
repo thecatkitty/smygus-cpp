@@ -6,16 +6,12 @@ import subprocess
 import sys
 import time
 
-from pywinauto import Application, WindowSpecification
-from pywinauto.findwindows import ElementNotFoundError
-from pywinauto.win32structures import RECT
-from PIL import ImageGrab
+from smygus import *
 
 
 CMAKE_EXE = os.path.join(cmake.CMAKE_BIN_DIR, 'cmake.exe')
 VCVARS32_BAT = 'C:\\MSDEV\\BIN\\VCVARS32.BAT'
 
-DIR_SCRIPT = os.path.dirname(os.path.abspath(__file__))
 DIR_SMYGUS = 'C:\\MSDEV\\PROJECTS\\SMYGUS'
 DIR_SOURCE = DIR_SMYGUS + '\\SOURCE'
 DIR_BUILD = DIR_SMYGUS + '\\BUILD'
@@ -26,8 +22,6 @@ PATCHED_FILES = [
     'Makefile',
     'Makefile2',
 ]
-
-SCALE = 1.0
 
 
 def load_vcvars() -> None:
@@ -114,53 +108,6 @@ def make_iso(name: str) -> None:
     print('done')
 
 
-def launch_dingusppc(iso: str) -> Application:
-    print('Launching the DingusPPC emulator...')
-    iso_path = os.path.abspath(iso)
-    cwd = os.getcwd()
-    os.chdir(os.path.join(DIR_SCRIPT, 'dingusppc'))
-    subprocess.Popen([
-        'dingusppc.exe',
-        '-m', 'imacg3',
-        '-b', 'imacboot.u3',
-        '--rambank1_size=128',
-        '--hdd_img=hd.img',
-        '--cdr_img=' + iso_path,
-    ])
-    os.chdir(cwd)
-
-    app = Application()
-    last_err = None
-    for _ in range(5):
-        time.sleep(1)
-        try:
-            app.connect(title='DingusPPC Display')
-            print('done')
-            return app
-        except ElementNotFoundError as err:
-            last_err = err
-            continue
-
-    raise last_err
-
-
-def wait_for_color(wnd: WindowSpecification, pos: tuple[int, int], color: tuple[int, int, int], timeout: int) -> None:
-    for _ in range(timeout + 1):
-        img = ImageGrab.grab(bbox=rect_to_bbox(
-            wnd.client_area_rect()), all_screens=True)
-        pixel = img.getpixel((pos[0] * SCALE, pos[1] * SCALE))
-        if pixel == color:
-            return
-
-        time.sleep(1)
-
-    raise TimeoutError()
-
-
-def rect_to_bbox(rect: RECT) -> tuple[int, int, int, int]:
-    return (rect.left * SCALE, rect.top * SCALE, rect.right * SCALE, rect.bottom * SCALE)
-
-
 load_vcvars()
 copy_sources(sys.argv[1])
 cmake_configure()
@@ -170,31 +117,32 @@ patch_makefiles({
 })
 make_iso(sys.argv[2])
 
-app = launch_dingusppc(sys.argv[2])
-wnd = app.top_window()
+dingus = DingusPPC(sys.argv[2])
+dingus.connect()
 
 print('Waiting for the ARC firmware boot menu...', end=' ', flush=True)
-wait_for_color(wnd, (8, 8), (0, 0, 170), 15)
+dingus.wait(color='#00A', position=(8, 8))
 print('done')
 
 print('Booting Windows NT...', end=' ', flush=True)
-wnd.type_keys('{ENTER down}{ENTER up}')
-wait_for_color(wnd, (8, 100), (0, 0, 255), 15)
+dingus.type_keys('{ENTER down}{ENTER up}')
+dingus.wait(color='#00F', position=(8, 100))
 print('done')
 
 print('Waiting for the desktop...', end=' ', flush=True)
-wait_for_color(wnd, (1000, 8), (0, 128, 128), 20)
+dingus.wait(color='#008080', position=(1000, 8), timeout=20)
 print('done')
 
 print('Waiting for the task bar...', end=' ', flush=True)
-wait_for_color(wnd, (500, 750), (192, 192, 192), 20)
+dingus.wait(color='#C0C0C0', position=(500, 750))
 print('done')
 
 print('Launching the Command Prompt...', end=' ', flush=True)
 time.sleep(0.5)
-wnd.type_keys('{TAB down}{TAB up}{ENTER down}{ENTER up}')
+dingus.type_keys('{TAB down}{TAB up}{ENTER down}{ENTER up}')
 time.sleep(2)
-wnd.type_keys('{UP down}{UP up}{UP down}{UP up}{ENTER down}{ENTER up}')
-time.sleep(2)
-wnd.type_keys('{c down}{c up}{m down}{m up}{d down}{d up}{ENTER down}{ENTER up}')
+dingus.type_keys('{UP down}{UP up}{UP down}{UP up}{ENTER down}{ENTER up}')
+time.sleep(3)
+dingus.type_keys(
+    '{c down}{c up}{m down}{m up}{d down}{d up}{ENTER down}{ENTER up}')
 print('done')
