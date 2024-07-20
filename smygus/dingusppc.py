@@ -1,10 +1,12 @@
 import os
 import subprocess
 import time
+import win32api
 
 from colour import Color
 from pywinauto import Application
 from pywinauto.findwindows import ElementNotFoundError
+from pywinauto.keyboard import CODE_NAMES
 from pywinauto.win32structures import RECT
 from PIL import ImageGrab
 
@@ -70,11 +72,33 @@ class DingusPPC(object):
     def press(self, *args) -> 'DingusPPC':
         for key in args:
             self.window.type_keys('{' + key + ' down}')
-            time.sleep(0.1)
 
         for key in reversed(args):
             self.window.type_keys('{' + key + ' up}')
-            time.sleep(0.1)
+
+        return self
+
+    def type(self, text: str) -> 'DingusPPC':
+        for ch in text:
+            vk = win32api.VkKeyScan(ch)
+            vk_code = vk & 0xFF
+            vk_name = CODE_NAMES[vk_code] if vk_code in CODE_NAMES.keys() else ch
+
+            if vk & 0x100:
+                self.window.type_keys('{VK_SHIFT down}')
+            if vk & 0x200:
+                self.window.type_keys('{VK_CONTROL down}')
+            if vk & 0x400:
+                self.window.type_keys('{VK_MENU down}')
+
+            self.press(vk_name)
+
+            if vk & 0x100:
+                self.window.type_keys('{VK_SHIFT up}')
+            if vk & 0x200:
+                self.window.type_keys('{VK_CONTROL up}')
+            if vk & 0x400:
+                self.window.type_keys('{VK_MENU up}')
 
         return self
 
