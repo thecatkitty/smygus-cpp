@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -7,34 +6,9 @@ import time
 
 from smygus import *
 
-
-VCVARS32_BAT = 'C:\\MSDEV\\BIN\\VCVARS32.BAT'
-
-DIR_SMYGUS = 'C:\\MSDEV\\PROJECTS\\SMYGUS'
+DIR_SMYGUS = os.path.join(VisualCPP4().projects_path, 'SMYGUS')
 DIR_SOURCE = DIR_SMYGUS + '\\SOURCE'
 DIR_BUILD = DIR_SMYGUS + '\\BUILD'
-
-
-def load_vcvars() -> None:
-    print('Loading Visual C++ environment variables...', end=' ')
-    vcvars32 = subprocess.Popen(
-        [VCVARS32_BAT, 'x86', '&&', 'set'], stdout=subprocess.PIPE, shell=True)
-    output, _ = vcvars32.communicate()
-    lines = output.decode().splitlines()
-    assert lines[0].startswith('Setting environment')
-
-    env = dict()
-    for line in lines:
-        if '=' not in line:
-            continue
-
-        key, value = line.split('=', 1)
-        env[key] = value
-
-    assert 'INCLUDE' in env.keys()
-    assert 'LIB' in env.keys()
-    os.environ.update(env)
-    print('done')
 
 
 def copy_sources(source_dir: str) -> None:
@@ -61,7 +35,6 @@ def make_iso(name: str) -> None:
     print('done')
 
 
-load_vcvars()
 copy_sources(sys.argv[1])
 
 cm = CMake()
