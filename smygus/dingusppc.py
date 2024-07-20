@@ -11,10 +11,6 @@ from pywinauto.win32structures import RECT
 from PIL import ImageGrab
 
 
-def _rect_to_bbox(rect: RECT) -> tuple[int, int, int, int]:
-    return (rect.left, rect.top, rect.right, rect.bottom)
-
-
 def _compare_pixel(pixel: tuple[int, int, int], color: Color) -> bool:
     pixel_r, pixel_g, pixel_b = (
         pixel[0] / 255.0, pixel[1] / 255.0, pixel[2] / 255.0)
@@ -104,10 +100,12 @@ class DingusPPC(object):
 
     def _wait_color(self, position: tuple[int, int], color: Color, timeout: int) -> None:
         for _ in range(timeout + 1):
-            img = ImageGrab.grab(bbox=_rect_to_bbox(
-                self.window.client_area_rect()), all_screens=True)
-            pixel = img.getpixel((position[0], position[1]))
-            if _compare_pixel(pixel, color):
+            rect = self.window.client_area_rect()
+            left = rect.left + position[0]
+            top = rect.top + position[1]
+            img = ImageGrab.grab(
+                bbox=(left, top, left + 1, top + 1), all_screens=True)
+            if _compare_pixel(img.getpixel((0, 0)), color):
                 return
 
             time.sleep(1)
