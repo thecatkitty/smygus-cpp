@@ -9,5 +9,5 @@ Requirements:
 - disabled DPI scaling for dingusppc.exe in compatibility properties
 
 ```
-python smyguscpp.py path\to\project cdimage.iso
+python smyguscpp.py path\to\cmake\project
 ```
