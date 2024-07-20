@@ -53,8 +53,16 @@ class DingusPPC(object):
 
         raise last_err
 
-    def type_keys(self, keys: str) -> None:
-        self.window.type_keys(keys)
+    def press(self, *args) -> 'DingusPPC':
+        for key in args:
+            self.window.type_keys('{' + key + ' down}')
+            time.sleep(0.1)
+
+        for key in reversed(args):
+            self.window.type_keys('{' + key + ' up}')
+            time.sleep(0.1)
+
+        return self
 
     def _wait_color(self, position: tuple[int, int], color: Color, timeout: int) -> None:
         for _ in range(timeout + 1):

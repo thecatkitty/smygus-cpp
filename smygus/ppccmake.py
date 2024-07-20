@@ -60,7 +60,7 @@ class PowerPCCMake(object):
         print('done')
 
         print('Booting Windows NT...', end=' ', flush=True)
-        dingus.type_keys('{ENTER down}{ENTER up}')
+        dingus.press('ENTER')
         dingus.wait(color='#00F', position=(8, 100))
         print('done')
 
