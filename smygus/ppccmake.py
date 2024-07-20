@@ -42,13 +42,14 @@ class PowerPCCMake(object):
         print('done')
 
         print('Creating the disk image...')
-        assert 0 == subprocess.call([
+        subprocess.run([
             'mkisofs',
             '-o', self.iso_path,
             '-r',  # Rock Ridge
             '-J',  # Joliet
             self.project_path,
-        ])
+        ],
+            check=True)
         print('done')
 
     def boot(self) -> DingusPPC:

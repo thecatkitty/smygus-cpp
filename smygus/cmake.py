@@ -16,7 +16,7 @@ class CMake(object):
         self.binaries = binaries
 
         shutil.rmtree(binaries, ignore_errors=True)
-        assert 0 == subprocess.call([
+        subprocess.run([
             self.exe_path,
             '-G', generator,
             '-S', sources,
@@ -24,6 +24,7 @@ class CMake(object):
         ] + [
             f'-D{key}' if len(value) == 0 else f'-D{key}={value}'
             for key, value in defines.items()],
+            check=True,
             env=os.environ)
 
     def patch_output(self, filenames: list[str], replacements: dict[str, str]):
