@@ -1,4 +1,3 @@
-import cmake
 import os
 import re
 import shutil
@@ -9,19 +8,11 @@ import time
 from smygus import *
 
 
-CMAKE_EXE = os.path.join(cmake.CMAKE_BIN_DIR, 'cmake.exe')
 VCVARS32_BAT = 'C:\\MSDEV\\BIN\\VCVARS32.BAT'
 
 DIR_SMYGUS = 'C:\\MSDEV\\PROJECTS\\SMYGUS'
 DIR_SOURCE = DIR_SMYGUS + '\\SOURCE'
 DIR_BUILD = DIR_SMYGUS + '\\BUILD'
-
-PATCHED_FILES = [
-    'build.make',
-    'CMakeCache.txt',
-    'Makefile',
-    'Makefile2',
-]
 
 
 def load_vcvars() -> None:
@@ -58,44 +49,6 @@ def copy_sources(source_dir: str) -> None:
     print('done')
 
 
-def cmake_configure() -> None:
-    print('Configuring the CMake project...')
-    shutil.rmtree(DIR_BUILD, ignore_errors=True)
-    assert 0 == subprocess.call([
-        CMAKE_EXE,
-        '-G', 'NMake Makefiles',
-        '-S', DIR_SOURCE,
-        '-B', DIR_BUILD,
-        '-D', 'CMAKE_SYSTEM_NAME=Windows',
-        '-D', 'CMAKE_BUILD_TYPE=Release',
-    ], env=os.environ)
-    print('done')
-
-
-def patch_makefiles(replacements: dict[str, str]):
-    print('Patching build files...')
-    escaped = dict((re.escape(k), v) for k, v in replacements.items())
-    pattern = re.compile("|".join(escaped.keys()))
-    for path, _, files in os.walk(os.path.abspath(DIR_BUILD)):
-        for filename in files:
-            if filename not in PATCHED_FILES:
-                continue
-
-            full_path = os.path.join(path, filename)
-            with open(full_path) as file:
-                content = file.read()
-
-            if not any(key in content for key in replacements.keys()):
-                continue
-
-            print('...', full_path)
-            new_content = pattern.sub(
-                lambda m: escaped[re.escape(m.group(0))], content)
-            with open(full_path, 'w') as file:
-                file.write(new_content)
-    print('done')
-
-
 def make_iso(name: str) -> None:
     print('Creating the disk image...')
     assert 0 == subprocess.call([
@@ -110,9 +63,19 @@ def make_iso(name: str) -> None:
 
 load_vcvars()
 copy_sources(sys.argv[1])
-cmake_configure()
-patch_makefiles({
-    CMAKE_EXE: 'echo cmake',
+
+cm = CMake()
+cm.configure('NMake Makefiles', sources=DIR_SOURCE, binaries=DIR_BUILD, defines={
+    'CMAKE_SYSTEM_NAME': 'Windows',
+    'CMAKE_BUILD_TYPE': 'Release',
+})
+cm.patch_output([
+    'build.make',
+    'CMakeCache.txt',
+    'Makefile',
+    'Makefile2',
+], {
+    cm.exe_path: 'echo cmake',
     ':X86': ':PPC',
 })
 make_iso(sys.argv[2])
