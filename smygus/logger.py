@@ -26,3 +26,12 @@ class ExecutionStep(object):
 
 def step(description: str) -> ExecutionStep:
     return ExecutionStep(description)
+
+
+def step_func(description: str):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            with step(description):
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
